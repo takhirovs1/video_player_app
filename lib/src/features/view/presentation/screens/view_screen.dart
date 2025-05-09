@@ -34,10 +34,7 @@ class _ViewScreenState extends State<ViewScreen> with ViewScreenController {
           isFullscreen
               ? null
               : AppBar(
-                title: Text(
-                  widget.videoModel.name,
-                  style: const TextStyle(color: AppColors.red),
-                ),
+                title: Text(widget.videoModel.name, style: const TextStyle(color: AppColors.red)),
                 backgroundColor: AppColors.backgroundColor,
                 leading: BackButton(
                   color: AppColors.red,
@@ -55,8 +52,7 @@ class _ViewScreenState extends State<ViewScreen> with ViewScreenController {
                   child: Builder(
                     builder: (context) {
                       final status = data?.status ?? DownloadStatus.notStarted;
-                      final isDownloading =
-                          status == DownloadStatus.downloading;
+                      final isDownloading = status == DownloadStatus.downloading;
                       final isCompleted = status == DownloadStatus.completed;
                       final progress = data?.progress ?? 0;
                       return ElevatedButton(
@@ -64,12 +60,7 @@ class _ViewScreenState extends State<ViewScreen> with ViewScreenController {
                           backgroundColor: getButtonColor(status),
                           fixedSize: Size(context.width * 0.85, 60),
                         ),
-                        onPressed:
-                            isDownloading
-                                ? cancelDownload
-                                : (isCompleted
-                                    ? removeDownload
-                                    : downloadVideo),
+                        onPressed: isDownloading ? cancelDownload : (isCompleted ? removeDownload : downloadVideo),
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -79,10 +70,7 @@ class _ViewScreenState extends State<ViewScreen> with ViewScreenController {
                                 style: const TextStyle(color: Colors.white),
                               ),
                             if (!isDownloading)
-                              Text(
-                                getButtonText(status),
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                              Text(getButtonText(status), style: const TextStyle(color: Colors.white)),
                           ],
                         ),
                       );
@@ -105,15 +93,9 @@ class _ViewScreenState extends State<ViewScreen> with ViewScreenController {
               child: ListView(
                 padding: Dimension.pAll10,
                 children: [
-                  ViewRichtext(
-                    mainText: 'Name: ',
-                    text: widget.videoModel.name,
-                  ),
+                  ViewRichtext(mainText: 'Name: ', text: widget.videoModel.name),
                   Dimension.hBox10,
-                  ViewRichtext(
-                    mainText: 'Description: ',
-                    text: widget.videoModel.description,
-                  ),
+                  ViewRichtext(mainText: 'Description: ', text: widget.videoModel.description),
                 ],
               ),
             ),

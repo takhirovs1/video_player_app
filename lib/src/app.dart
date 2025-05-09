@@ -10,10 +10,6 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) => RepositoryProvider(
     create: (context) => VideoPlayerControllerInterfaceImpl(),
-    child: MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Video Player App',
-      routerConfig: router,
-    ),
+    child: MaterialApp.router(debugShowCheckedModeBanner: false, title: 'Video Player App', routerConfig: router),
   );
 }

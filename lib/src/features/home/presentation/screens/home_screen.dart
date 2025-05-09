@@ -58,9 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return Card(
                   elevation: 4,
                   color: AppColors.red,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: InkWell(
                     onTap: () {
                       context.pushNamed(Routes.view, extra: video);
@@ -71,12 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: Dimension.rTop16,
-                          child: Image.network(
-                            video.image,
-                            height: 100,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
+                          child: Image.network(video.image, height: 100, width: double.infinity, fit: BoxFit.cover),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -84,11 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             video.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: AppColors.white,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.white),
                           ),
                         ),
                         Padding(
@@ -97,10 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             video.description,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.white,
-                            ),
+                            style: const TextStyle(fontSize: 12, color: AppColors.white),
                           ),
                         ),
                       ],
@@ -110,12 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             );
           } else {
-            return const Center(
-              child: Text(
-                'Xatolik yuz berdi',
-                style: TextStyle(color: AppColors.white),
-              ),
-            );
+            return const Center(child: Text('Xatolik yuz berdi', style: TextStyle(color: AppColors.white)));
           }
         },
       ),

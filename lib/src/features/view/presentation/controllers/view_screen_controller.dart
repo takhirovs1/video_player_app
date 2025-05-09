@@ -7,8 +7,7 @@ import '../../../../services/local_source.dart';
 import '../screens/view_screen.dart';
 
 mixin ViewScreenController on State<ViewScreen> {
-  VideoPlayerControllerInterface get controller =>
-      context.read<VideoPlayerControllerInterfaceImpl>();
+  VideoPlayerControllerInterface get controller => context.read<VideoPlayerControllerInterfaceImpl>();
   bool isFullscreen = false;
   DownloadData? data;
 

@@ -18,22 +18,12 @@ sealed class LocalSource {
 
   static List<VideoModel> getDownloadedVideos() {
     final list = preferences.getStringList('videos') ?? [];
-    final result =
-        list
-            .map(
-              (e) => VideoModel.fromJson(
-                (jsonDecode(e) as Map).cast<String, Object?>(),
-              ),
-            )
-            .toList();
+    final result = list.map((e) => VideoModel.fromJson((jsonDecode(e) as Map).cast<String, Object?>())).toList();
     return result;
   }
 
   static Future<void> _setVideos(List<VideoModel> videos) async {
-    await preferences.setStringList(
-      'videos',
-      videos.map((e) => jsonEncode(e.toJson())).toList(),
-    );
+    await preferences.setStringList('videos', videos.map((e) => jsonEncode(e.toJson())).toList());
   }
 
   static Future<void> saveVideo(VideoModel video) async {

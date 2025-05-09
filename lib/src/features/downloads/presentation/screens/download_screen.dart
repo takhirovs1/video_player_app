@@ -20,10 +20,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.backgroundColor,
     appBar: AppBar(
-      title: const Text(
-        'Download Screen',
-        style: TextStyle(color: AppColors.red),
-      ),
+      title: const Text('Download Screen', style: TextStyle(color: AppColors.red)),
       backgroundColor: AppColors.backgroundColor,
     ),
     body: StreamBuilder(
@@ -44,9 +41,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
             return Card(
               elevation: 4,
               color: AppColors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: InkWell(
                 onTap: () {
                   context.pushNamed(Routes.view, extra: video);
@@ -57,12 +52,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: Dimension.rTop16,
-                      child: Image.network(
-                        video.image,
-                        height: 100,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                      child: Image.network(video.image, height: 100, width: double.infinity, fit: BoxFit.cover),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -70,11 +60,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         video.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: AppColors.white,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.white),
                       ),
                     ),
                     Padding(
@@ -83,10 +69,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         video.description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.white,
-                        ),
+                        style: const TextStyle(fontSize: 12, color: AppColors.white),
                       ),
                     ),
                   ],
