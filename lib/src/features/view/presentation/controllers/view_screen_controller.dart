@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player_package/video_player_package.dart';
 
 import '../../../../common/constants/app_colors.dart';
 import '../screens/view_screen.dart';
 
 mixin ViewScreenController on State<ViewScreen> {
-  late final VideoPlayerController videoController;
+  VideoPlayerControllerInterface get controller =>
+      context.read<VideoPlayerControllerInterfaceImpl>();
   bool isFullscreen = false;
+  DownloadData? data;
+
+  String get url => widget.videoModel.url;
 
   // Initialize the video controller and add listener for downloadStatus changes
-  void initializeController(String url) {
-    videoController = VideoPlayerController(url);
-    videoController.downloadStatus.addListener(() {
-      setState(() {
-        debugPrint('Download Status Updated: ${videoController.downloadStatus.value}');
-      });
+  void initializeController() {
+    controller.statusStream().listen((event) {
+      if (event.url == url) {
+        data = event;
+        setState(() {});
+      }
     });
   }
 
@@ -27,12 +32,12 @@ mixin ViewScreenController on State<ViewScreen> {
 
   // Start the download
   Future<void> downloadVideo() async {
-    await videoController.startDownload();
+    await controller.startDownload(url: url, onProgress: (progress) {});
   }
 
   // Cancel the ongoing download
   Future<void> cancelDownload() async {
-    videoController.cancelDownload();
+    await controller.cancelDownload(url);
   }
 
   // Get the appropriate text for the button based on the download status
@@ -67,16 +72,8 @@ mixin ViewScreenController on State<ViewScreen> {
     }
   }
 
-  // Get the download progress as a percentage
-  double getProgress() {
-    if (videoController.downloadStatus.value == DownloadStatus.downloading) {
-      return videoController.progress.value;
-    }
-    return 0;
-  }
-
   // Remove the downloaded file
   Future<void> removeDownload() async {
-    await videoController.removeDownload();
+    await controller.removeDownload(url);
   }
 }

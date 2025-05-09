@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player_package/video_player_package.dart';
 
@@ -21,7 +22,7 @@ class _ViewScreenState extends State<ViewScreen> with ViewScreenController {
   @override
   void initState() {
     super.initState();
-    initializeController(widget.videoModel.url);
+    initializeController();
   }
 
   @override
@@ -51,66 +52,41 @@ class _ViewScreenState extends State<ViewScreen> with ViewScreenController {
               : SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: ValueListenableBuilder<DownloadStatus>(
-                    valueListenable: videoController.downloadStatus,
-                    builder:
-                        (context, status, _) => ValueListenableBuilder<double>(
-                          valueListenable: videoController.progress,
-                          builder: (context, progress, _) {
-                            final isDownloading =
-                                status == DownloadStatus.downloading;
-                            final isCompleted =
-                                status == DownloadStatus.completed;
-
-                            return ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: getButtonColor(status),
-                                fixedSize: Size(context.width * 0.85, 60),
-                              ),
-                              onPressed:
-                                  isDownloading
-                                      ? cancelDownload
-                                      : (isCompleted
-                                          ? removeDownload
-                                          : downloadVideo),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  if (isDownloading)
-                                    Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        SizedBox(
-                                          width: 40,
-                                          height: 40,
-                                          child: CircularProgressIndicator(
-                                            value: progress,
-                                            valueColor:
-                                                const AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
-                                            strokeWidth: 3,
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          '${(progress * 100).toStringAsFixed(0)}%',
-                                          style: const TextStyle(color: Colors.white),
-                                        ),
-                                      ],
-                                    ),
-                                  if (!isDownloading)
-                                    Text(
-                                      getButtonText(status),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
+                  child: Builder(
+                    builder: (context) {
+                      final status = data?.status ?? DownloadStatus.notStarted;
+                      final isDownloading =
+                          status == DownloadStatus.downloading;
+                      final isCompleted = status == DownloadStatus.completed;
+                      final progress = data?.progress ?? 0;
+                      return ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: getButtonColor(status),
+                          fixedSize: Size(context.width * 0.85, 60),
                         ),
+                        onPressed:
+                            isDownloading
+                                ? cancelDownload
+                                : (isCompleted
+                                    ? removeDownload
+                                    : downloadVideo),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            if (isDownloading)
+                              Text(
+                                '${(progress * 100).toStringAsFixed(0)}%',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            if (!isDownloading)
+                              Text(
+                                getButtonText(status),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -119,7 +95,8 @@ class _ViewScreenState extends State<ViewScreen> with ViewScreenController {
           AspectRatio(
             aspectRatio: 16 / (isFullscreen ? 6.8 : 9),
             child: VideoPlayerWidget(
-              controller: videoController,
+              videoUrl: url,
+              controller: context.read<VideoPlayerControllerInterfaceImpl>(),
               onFullscreenToggle: (value) => toggleFullscreen(),
             ),
           ),

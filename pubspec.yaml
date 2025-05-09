@@ -22,8 +22,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   # State management
   equatable: ^2.0.7
-  # Path file
-  path_provider: ^2.1.5
   # Permission
   permission_handler: ^10.2.0                
   flutter_cache_manager: ^3.3.0  

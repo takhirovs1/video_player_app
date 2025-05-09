@@ -1,16 +1,20 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart' as vp;
 import 'video_player_controller.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
-  final VideoPlayerController controller;
-  final ValueChanged<bool>? onFullscreenToggle; // Add this line
+  final VideoPlayerControllerInterface controller;
+  final ValueChanged<bool>? onFullscreenToggle;
+  final String videoUrl;
 
   const VideoPlayerWidget({
     super.key,
     required this.controller,
-    this.onFullscreenToggle, // Add this line
+    required this.videoUrl,
+    this.onFullscreenToggle,
   });
 
   @override
@@ -25,27 +29,32 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   void initState() {
     super.initState();
     _initializeVideo();
-    widget.controller.downloadStatus.addListener(() {
-      if (widget.controller.downloadStatus.value == DownloadStatus.completed) {
+    widget.controller.statusStream().listen((event) {
+      if (event.url == widget.videoUrl &&
+          event.status == DownloadStatus.completed) {
         _initializeVideo();
       }
     });
   }
 
   Future<void> _initializeVideo() async {
-    _videoController?.dispose();
-    _videoController = vp.VideoPlayerController.network(
-      widget.controller.videoSource,
-    );
+    final file = await widget.controller.getFile(widget.videoUrl);
+    if (file != null) {
+      _videoController?.dispose();
+      _videoController = vp.VideoPlayerController.file(file);
+    } else {
+      _videoController?.dispose();
+      _videoController = vp.VideoPlayerController.network(widget.videoUrl);
+    }
+
     await _videoController!.initialize();
-    _videoController!.play(); // auto-play
+    _videoController!.play();
     setState(() {});
   }
 
   @override
   void dispose() {
     _videoController?.dispose();
-    // restore portrait on exit
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,
@@ -87,11 +96,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
-      widget.onFullscreenToggle?.call(true); // Notify entering fullscreen
+      widget.onFullscreenToggle?.call(true);
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-      widget.onFullscreenToggle?.call(false); // Notify exiting fullscreen
+      widget.onFullscreenToggle?.call(false);
     }
   }
 

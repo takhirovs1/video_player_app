@@ -1,94 +1,111 @@
+import 'dart:async';
 import 'dart:io';
+
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:video_player_package/src/download_manager.dart';
 
 enum DownloadStatus { notStarted, downloading, completed, canceled, failed }
 
-class VideoPlayerController {
+typedef ProgressCallback = void Function(double progress);
+
+//TODO change file
+class DownloadData {
   final String url;
-  final ValueNotifier<DownloadStatus> downloadStatus = ValueNotifier(
-    DownloadStatus.notStarted,
-  );
-  final ValueNotifier<double> progress = ValueNotifier(0.0);
+  final DownloadStatus status;
+  final double progress;
 
-  String? _localFilePath;
-  CancelToken? _cancelToken;
+  const DownloadData(this.status, this.url, this.progress);
+}
 
-  VideoPlayerController(this.url);
+abstract class VideoPlayerControllerInterface {
+  const VideoPlayerControllerInterface();
+  Stream<DownloadData> statusStream();
+  Future<bool> isExist(String url);
 
-  /// Starts the download and updates the progress and status.
-  Future<void> startDownload() async {
-    downloadStatus.value = DownloadStatus.downloading;
-    progress.value = 0.0;
-    _cancelToken = CancelToken();
+  Future<void> startDownload({
+    required String url,
+    required ProgressCallback onProgress,
+  });
 
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath = '${dir.path}/${Uri.parse(url).pathSegments.last}';
-      _localFilePath = filePath;
+  Future<void> cancelDownload(String url);
 
-      await Dio().download(
-        url,
-        filePath,
-        cancelToken: _cancelToken,
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            progress.value = received / total;
-          }
-        },
+  Future<void> removeDownload(String url);
+
+  Future<void> dispose();
+
+  Future<File?> getFile(String url);
+
+  Future<DownloadData> getInitialData(String url);
+}
+
+class VideoPlayerControllerInterfaceImpl
+    extends VideoPlayerControllerInterface {
+  static final Map<String, CancelToken> _cancelMap = {};
+  final DownloadManagerInterface _downloadManager;
+  final StreamController<DownloadData> _streamController;
+
+  VideoPlayerControllerInterfaceImpl()
+    : _downloadManager = DownloadManagerImpl(),
+      _streamController = StreamController();
+
+  @override
+  Stream<DownloadData> statusStream() => _streamController.stream.asBroadcastStream();
+
+  @override
+  Future<void> cancelDownload(String url) async {
+    _cancelMap[url]?.cancel();
+    _cancelMap.remove(url);
+    _streamController.add(DownloadData(DownloadStatus.canceled, url, 0));
+  }
+
+  @override
+  Future<bool> isExist(String url) async {
+    final file = await _downloadManager.file(url);
+    return file != null;
+  }
+
+  @override
+  Future<void> removeDownload(String url) async {
+    _downloadManager.removeDownload(url);
+    _cancelMap.remove(url);
+    _streamController.add(DownloadData(DownloadStatus.notStarted, url, 0));
+  }
+
+  @override
+  Future<void> startDownload({
+    required String url,
+    required ProgressCallback onProgress,
+  }) async {
+    final cancelToken = await _downloadManager.startDownload(url, (progress) {
+      onProgress.call(progress);
+      _streamController.add(
+        DownloadData(
+          switch (progress) {
+            1 => DownloadStatus.completed,
+            _ => DownloadStatus.downloading,
+          },
+          url,
+          progress,
+        ),
       );
-
-      // Mark download as complete
-      downloadStatus.value = DownloadStatus.completed;
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
-        // Handle cancellation
-        downloadStatus.value = DownloadStatus.canceled;
-      } else {
-        // Handle other errors
-        debugPrint('Download failed: $e');
-        downloadStatus.value = DownloadStatus.failed;
-      }
-    } catch (e) {
-      debugPrint('Unexpected error: $e');
-      downloadStatus.value = DownloadStatus.failed;
-    }
+    });
+    _cancelMap[url] = cancelToken;
   }
 
-  /// Cancels the current download if in progress.
-  void cancelDownload() {
-    if (downloadStatus.value == DownloadStatus.downloading) {
-      _cancelToken?.cancel();
-    }
+  @override
+  Future<void> dispose() async {
+    _cancelMap.clear();
+    _streamController.close();
   }
 
-  /// Removes the downloaded file.
-  Future<void> removeDownload() async {
-    if (_localFilePath != null) {
-      final file = File(_localFilePath!);
-      if (await file.exists()) {
-        await file.delete();
-      }
-      _localFilePath = null;
-    }
-    downloadStatus.value = DownloadStatus.notStarted;
-    progress.value = 0.0;
-  }
+  @override
+  Future<File?> getFile(String url) async => await _downloadManager.file(url);
 
-  /// Releases the resources.
-  void dispose() {
-    downloadStatus.dispose();
-    progress.dispose();
-  }
-
-  /// Returns the local file path if exists, otherwise the remote URL.
-  String get videoSource => _localFilePath ?? url;
-
-  /// Returns true if the file is already downloaded.
-  Future<bool> get isDownloaded async {
-    if (_localFilePath == null) return false;
-    final file = File(_localFilePath!);
-    return file.exists();
+  @override
+  Future<DownloadData> getInitialData(String url) async {
+    return _streamController.stream.lastWhere(
+      (element) => element.url == url,
+      orElse: () => DownloadData(DownloadStatus.notStarted, url, 0),
+    );
   }
 }
