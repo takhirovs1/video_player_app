@@ -53,8 +53,9 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   @override
-  void dispose() {
-    _videoController?.dispose();
+  void dispose() async {
+    // _videoController?.pause();
+   await _videoController?.dispose();
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,
@@ -141,11 +142,12 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                       color: Colors.white,
                     ),
                     iconSize: 56,
-                    onPressed: () {
+                    onPressed: ()async {
+                      _videoController!.value.isPlaying
+                            ? await _videoController!.pause()
+                            : await _videoController!.play();
                       setState(() {
-                        _videoController!.value.isPlaying
-                            ? _videoController!.pause()
-                            : _videoController!.play();
+                        
                       });
                     },
                   ),

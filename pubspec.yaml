@@ -29,6 +29,7 @@ dependencies:
 
   video_player_package:
     path: ./video_player_package 
+  shared_preferences: ^2.5.3
 
 
 

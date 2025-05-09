@@ -22,7 +22,6 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       final videos = await videoRepository.fetchVideos();
       emit(state.copyWith(status: Status.success, videos: videos));
     } catch (e) {
-      print('Error: $e');
       emit(state.copyWith(status: Status.error));
     }
   }

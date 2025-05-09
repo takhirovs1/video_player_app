@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player_package/video_player_package.dart';
 
 import '../../../../common/constants/app_colors.dart';
+import '../../../../services/local_source.dart';
 import '../screens/view_screen.dart';
 
 mixin ViewScreenController on State<ViewScreen> {
@@ -14,13 +15,16 @@ mixin ViewScreenController on State<ViewScreen> {
   String get url => widget.videoModel.url;
 
   // Initialize the video controller and add listener for downloadStatus changes
-  void initializeController() {
+  Future<void> initializeController() async {
     controller.statusStream().listen((event) {
+      print('Status url: ${event.url} ${event.status}');
       if (event.url == url) {
         data = event;
         setState(() {});
       }
     });
+    data = await controller.getInitialData(url);
+    setState(() {});
   }
 
   // Toggle fullscreen mode
@@ -32,11 +36,13 @@ mixin ViewScreenController on State<ViewScreen> {
 
   // Start the download
   Future<void> downloadVideo() async {
+    await LocalSource.saveVideo(widget.videoModel);
     await controller.startDownload(url: url, onProgress: (progress) {});
   }
 
   // Cancel the ongoing download
   Future<void> cancelDownload() async {
+    await LocalSource.deleteVideo(widget.videoModel);
     await controller.cancelDownload(url);
   }
 
@@ -66,7 +72,7 @@ mixin ViewScreenController on State<ViewScreen> {
       case DownloadStatus.completed:
         return AppColors.grey;
       case DownloadStatus.canceled:
-        return AppColors.purple;
+        return AppColors.redAccent;
       case DownloadStatus.failed:
         return AppColors.red;
     }
@@ -74,6 +80,7 @@ mixin ViewScreenController on State<ViewScreen> {
 
   // Remove the downloaded file
   Future<void> removeDownload() async {
+    await LocalSource.deleteVideo(widget.videoModel);
     await controller.removeDownload(url);
   }
 }

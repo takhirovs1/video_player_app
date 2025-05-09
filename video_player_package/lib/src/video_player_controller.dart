@@ -3,19 +3,12 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:video_player_package/src/download_manager.dart';
+import 'package:video_player_package/video_player_package.dart';
 
 enum DownloadStatus { notStarted, downloading, completed, canceled, failed }
 
 typedef ProgressCallback = void Function(double progress);
 
-//TODO change file
-class DownloadData {
-  final String url;
-  final DownloadStatus status;
-  final double progress;
-
-  const DownloadData(this.status, this.url, this.progress);
-}
 
 abstract class VideoPlayerControllerInterface {
   const VideoPlayerControllerInterface();
@@ -46,10 +39,10 @@ class VideoPlayerControllerInterfaceImpl
 
   VideoPlayerControllerInterfaceImpl()
     : _downloadManager = DownloadManagerImpl(),
-      _streamController = StreamController();
+      _streamController = StreamController.broadcast();
 
   @override
-  Stream<DownloadData> statusStream() => _streamController.stream.asBroadcastStream();
+  Stream<DownloadData> statusStream() => _streamController.stream;
 
   @override
   Future<void> cancelDownload(String url) async {
@@ -82,6 +75,7 @@ class VideoPlayerControllerInterfaceImpl
         DownloadData(
           switch (progress) {
             1 => DownloadStatus.completed,
+            _ when !_cancelMap.containsKey(url) => DownloadStatus.canceled,
             _ => DownloadStatus.downloading,
           },
           url,
@@ -89,6 +83,7 @@ class VideoPlayerControllerInterfaceImpl
         ),
       );
     });
+
     _cancelMap[url] = cancelToken;
   }
 
@@ -103,6 +98,10 @@ class VideoPlayerControllerInterfaceImpl
 
   @override
   Future<DownloadData> getInitialData(String url) async {
+    final file = await getFile(url);
+    if (file != null) {
+      return DownloadData(DownloadStatus.completed, url, 1);
+    }
     return _streamController.stream.lastWhere(
       (element) => element.url == url,
       orElse: () => DownloadData(DownloadStatus.notStarted, url, 0),

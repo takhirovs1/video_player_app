@@ -12,7 +12,6 @@ class VideoRepositoryImpl implements VideoRepository {
   @override
   Future<List<VideoModel>> fetchVideos() async {
     final response = await rootBundle.loadString('assets/json/video_api.json');
-    print('Response: $response');
     final data = json.decode(response) as List;
     return data.map((json) => VideoModel.fromJson(json as Map<String, Object?>)).toList();
   }
