@@ -10,6 +10,7 @@ abstract class DownloadManagerInterface {
   Future<File?> file(String url);
   Future<void> removeDownload(String url);
   Future<Directory> get saveDirectory;
+  Future<String> getM3u8Content(String url);
 }
 
 class DownloadManagerImpl implements DownloadManagerInterface {
@@ -43,6 +44,29 @@ class DownloadManagerImpl implements DownloadManagerInterface {
     return saveDir;
   }
 
+  // @override
+  // Future<CancelToken> startDownload(
+  //   String url,
+  //   ProgressCallback onProgress,
+  // ) async {
+  //   final cancelToken = CancelToken();
+
+  //   _dio
+  //       .download(
+  //         url,
+  //         (_) async => (await saveDirectory).path + url.getFileName,
+  //         onReceiveProgress: (received, total) {
+  //           if (total != -1) {
+  //             onProgress(received / total);
+  //           }
+  //         },
+  //         cancelToken: cancelToken,
+  //       )
+  //       .then((value) => onProgress(1));
+
+  //   return cancelToken;
+  // }
+
   @override
   Future<CancelToken> startDownload(
     String url,
@@ -50,20 +74,39 @@ class DownloadManagerImpl implements DownloadManagerInterface {
   ) async {
     final cancelToken = CancelToken();
 
-    _dio
-        .download(
-          url,
-          (_) async => (await saveDirectory).path + url.getFileName,
-          onReceiveProgress: (received, total) {
-            if (total != -1) {
-              onProgress(received / total);
-            }
-          },
-          cancelToken: cancelToken,
-        )
-        .then((value) => onProgress(1));
+    final saveDir = await saveDirectory;
+    final fileName = url.getFileName;
+    final savePath = '${saveDir.path}/$fileName';
+
+    if (url.endsWith('.m3u8')) {
+      final response = await _dio.get(url, cancelToken: cancelToken);
+
+      final file = File(savePath);
+      await file.writeAsString(response.data.toString());
+
+      onProgress(1);
+    } else {
+      _dio
+          .download(
+            url,
+            savePath,
+            onReceiveProgress: (received, total) {
+              if (total != -1) {
+                onProgress(received / total);
+              }
+            },
+            cancelToken: cancelToken,
+          )
+          .then((_) => onProgress(1));
+    }
 
     return cancelToken;
+  }
+
+  @override
+  Future<String> getM3u8Content(String url) async {
+    final response = await _dio.get(url);
+    return response.data.toString();
   }
 }
 

@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:video_player_package/src/download_manager.dart';
+import 'package:video_player_package/src/models/download_data_model.dart';
 import 'package:video_player_package/video_player_package.dart';
 
 enum DownloadStatus { notStarted, downloading, completed, canceled, failed }
 
 typedef ProgressCallback = void Function(double progress);
-
 
 abstract class VideoPlayerControllerInterface {
   const VideoPlayerControllerInterface();
@@ -69,22 +69,71 @@ class VideoPlayerControllerInterfaceImpl
     required String url,
     required ProgressCallback onProgress,
   }) async {
-    final cancelToken = await _downloadManager.startDownload(url, (progress) {
-      onProgress.call(progress);
-      _streamController.add(
-        DownloadData(
-          switch (progress) {
-            1 => DownloadStatus.completed,
-            _ when !_cancelMap.containsKey(url) => DownloadStatus.canceled,
-            _ => DownloadStatus.downloading,
-          },
-          url,
-          progress,
-        ),
-      );
-    });
+    if (url.endsWith('.m3u8')) {
+      final cancelToken = CancelToken();
+      _cancelMap[url] = cancelToken;
+     await downloadM3u8(url, onProgress);
+      DownloadData(DownloadStatus.downloading, url, 0);
+    } else {
+      final cancelToken = await _downloadManager.startDownload(url, (progress) {
+        onProgress.call(progress);
+        _streamController.add(
+          DownloadData(
+            switch (progress) {
+              1 => DownloadStatus.completed,
+              _ when !_cancelMap.containsKey(url) => DownloadStatus.canceled,
+              _ => DownloadStatus.downloading,
+            },
+            url,
+            progress,
+          ),
+        );
+      });
 
-    _cancelMap[url] = cancelToken;
+      _cancelMap[url] = cancelToken;
+    }
+  }
+
+  Future<void> downloadM3u8(String url, ProgressCallback onProgress) async {
+    try {
+      final playlistContent = await _downloadManager.getM3u8Content(url);
+      final lines = playlistContent.split('\n');
+      final segmentUrls =
+          lines
+              .where((line) => line.isNotEmpty && !line.startsWith('#'))
+              .toList();
+      int completed = 0;
+
+      for (final segment in segmentUrls) {
+        final segmentUrl = Uri.parse(url).resolve(segment).toString();
+        if (_cancelMap.containsKey(url)) {
+          final cancelToken = await _downloadManager.startDownload(
+            segmentUrl,
+            (_) {},
+          );
+          _cancelMap[url] = cancelToken;
+          completed++;
+          final progress = completed / segmentUrls.length;
+          onProgress.call(progress);
+          _streamController.add(
+            DownloadData(DownloadStatus.downloading, url, progress),
+          );
+        } else {
+          _streamController.add(
+            DownloadData(
+              DownloadStatus.canceled,
+              url,
+              completed / segmentUrls.length,
+            ),
+          );
+          return;
+        }
+      }
+
+      _streamController.add(DownloadData(DownloadStatus.completed, url, 1));
+    } catch (e) {
+      _streamController.add(DownloadData(DownloadStatus.failed, url, 0));
+    }
   }
 
   @override
